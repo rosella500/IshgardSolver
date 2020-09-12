@@ -6,8 +6,6 @@ import static ishgard.Material.*;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.EnumMap;
-import java.util.List;
-import java.util.ArrayList;
 
 import java.util.Set; 
 import java.util.HashSet; 
@@ -37,28 +35,14 @@ public class IshgardSolver
 
         Map<Material, Integer> totalMats = new EnumMap<>(Material.class);
         Scanner sc = new Scanner(System.in);
-        // for(Material m : Material.values())
-        // {
-        //     System.out.println("How many "+m+"s do you have?");
-        //     totalMats.put(m, sc.nextInt() / MAT_MULTIPLIER);
-        // }
-        // sc.nextLine();
-        totalMats.put(Log, 435/ MAT_MULTIPLIER);
-        totalMats.put(Wheat, 510/ MAT_MULTIPLIER);
-        totalMats.put(Adder, 490/ MAT_MULTIPLIER);
-        totalMats.put(Resin, 470/ MAT_MULTIPLIER);
-        totalMats.put(Cotton, 445/ MAT_MULTIPLIER);
-        totalMats.put(Salt, 490/ MAT_MULTIPLIER);
-        totalMats.put(Water, 480/ MAT_MULTIPLIER);
-        totalMats.put(Dust, 435/ MAT_MULTIPLIER);
-        totalMats.put(Mudstone, 440/ MAT_MULTIPLIER);
-        totalMats.put(Ore, 515/ MAT_MULTIPLIER);
+        for(Material m : Material.values())
+        {
+            System.out.println("How many "+m+"s do you have?");
+            totalMats.put(m, sc.nextInt() / MAT_MULTIPLIER);
+        }
+        sc.nextLine();
 
         Solution bestSolution = getBestBruteForce(totalMats);
-        // Solution brute10 = getBestBruteForceWithDivisions(totalMats, 10);
-        // Solution brute30 = getBestBruteForceWithDivisions(totalMats, 30);
-        // Solution brute50 = getBestBruteForceWithDivisions(totalMats, 50);
-        //Solution bestSolution = getBestGreedyWithOptimizations(totalMats, 40);
 
         System.out.println(bestSolution.getSummary(totalMats));
         Map<Material,Integer> leftoverMats = bestSolution.getLeftoverMats(totalMats);
@@ -68,171 +52,6 @@ public class IshgardSolver
 
         sc.nextLine();
         sc.close();
-    }
-
-    public static <E> List<List<E>> generatePerm(List<E> original) {
-        if (original.isEmpty()) {
-          List<List<E>> result = new ArrayList<>(); 
-          result.add(new ArrayList<>()); 
-          return result; 
-        }
-        E firstElement = original.remove(0);
-        List<List<E>> returnValue = new ArrayList<>();
-        List<List<E>> permutations = generatePerm(original);
-        for (List<E> smallerPermutated : permutations) {
-          for (int index=0; index <= smallerPermutated.size(); index++) {
-            List<E> temp = new ArrayList<>(smallerPermutated);
-            temp.add(index, firstElement);
-            returnValue.add(temp);
-          }
-        }
-        return returnValue;
-      }
-
-    public static Solution getBestGreedy(Map<Material, Integer> totalMats)
-    {
-        List<Solution> allSolutions = new ArrayList<>();
-        
-        List<Crafter> crafters = new ArrayList<>();
-        for(Crafter c : Crafter.values())
-        {
-            crafters.add(c);
-        }
-        List<List<Crafter>> listOfAllPermuts = generatePerm(crafters);
-        
-        for(List<Crafter> crafterList : listOfAllPermuts)
-        {
-            Solution greedySolution = new Solution();
-            for(Crafter craft : crafterList)
-            {
-                while(greedySolution.canFitCrafter(craft, totalMats))
-                {
-                    greedySolution.addCraft(craft);
-                }
-            }
-            allSolutions.add(greedySolution);
-        }
-
-        return getBestSolution(totalMats, allSolutions.toArray(new Solution[0]));
-
-    }
-
-    public static Solution getBestGreedyWithOptimizations(Map<Material, Integer> totalMats, int degrees)
-    {
-
-        Solution greedySolution = getBestGreedy(totalMats);
-
-        if(greedySolution == null)
-        {
-            return null;
-        }
-
-        Set<Solution> calculatedSolutions = new HashSet<>();
-        calculatedSolutions.add(greedySolution);
-
-        long firstTimestamp = System.currentTimeMillis();
-        Solution bestAdjacent = getBestAdjacentSolution(greedySolution, degrees, totalMats, calculatedSolutions);
-
-        Solution bestSolution = greedySolution;
-        if(bestAdjacent != null && getWeightedBadness(bestAdjacent, totalMats) < getWeightedBadness(greedySolution, totalMats))
-        {
-            bestSolution = bestAdjacent;
-            System.out.println("Found optimization over greedy! Original solution: "+greedySolution.getSummary(totalMats));
-        }
-
-        System.out.println("Took "+(System.currentTimeMillis() - firstTimestamp)+"ms and calculated results of "+calculatedSolutions.size()+" combinations. Degrees from greedy: "+degrees);
-        return bestSolution;
-    }
-
-    public static Solution getBestAdjacentSolution(Solution partialSolution, int degree, Map<Material, Integer> mats, Set<Solution> calculatedSolutions)
-
-    {
-        if(partialSolution == null)
-        {
-            return null;
-        }
-
-        if(degree == 0)
-        {
-            return partialSolution;
-        }
-
-        List<Solution> possibleSolutions = new ArrayList<>();
-        possibleSolutions.add(partialSolution);
-
-        //Find all adjacent points
-        for(Crafter craftToRemove: Crafter.values())
-        {
-            Solution solutionRemoved = partialSolution.cloneMinusCraft(craftToRemove);
-            if(solutionRemoved == null)
-            {
-                continue;
-            }
-
-            if(calculatedSolutions.contains(solutionRemoved))
-            { 
-                //Already calculated
-                continue;
-            }
-
-            for(Crafter craftToAdd : Crafter.values())
-            {
-                Solution bestSolution;
-                if(degree == 1)
-                {
-                    bestSolution = getBestBruteForce(solutionRemoved, craftToAdd, mats, calculatedSolutions);   
-                }
-                else
-                {
-                    bestSolution = getBestAdjacentSolution(solutionRemoved, degree - 1, mats, calculatedSolutions);
-                }   
-                if(bestSolution != null)
-                {
-                    possibleSolutions.add(bestSolution);
-                }  
-            }
-        }
-        
-        return getBestSolution(mats, possibleSolutions.toArray(new Solution[0]));
-    }
-
-    public static Solution getBestBruteForceWithDivisions(Map<Material, Integer> totalMats, int groupSize)
-    {
-        int subdivision = groupSize / MAT_MULTIPLIER;
-        int mult = -1;
-        for(Map.Entry<Material, Integer> entry : totalMats.entrySet())
-        {
-            int tempMult = entry.getValue() / subdivision;
-
-            if(mult <= 0 || (tempMult > 0 && tempMult < mult))
-            {
-                mult = tempMult;
-            }
-        }
-
-        if(mult <= 0)
-        {
-            mult = 1;
-        }
-
-        Map<Material, Integer> workingMatMap = new EnumMap<>(Material.class);
-
-        for(Map.Entry<Material,Integer> entry : totalMats.entrySet())
-        {
-            workingMatMap.put(entry.getKey(), entry.getValue() / mult);
-        }
-        
-
-        Solution bestSolution = getBestBruteForce(workingMatMap);
-        bestSolution.mult(mult);
-
-        Map<Material,Integer> leftoverMats = bestSolution.getLeftoverMats(totalMats);
-        System.out.println("Leftover mats: "+leftoverMats);
-        Solution leftoverSolution = getBestBruteForce(leftoverMats);
-
-        bestSolution.add(leftoverSolution);
-
-        return bestSolution;
     }
 
     public static Solution getBestBruteForce(Solution current, Crafter crafter, Map<Material, Integer> mats, Set<Solution> calculatedSolutions)
@@ -431,49 +250,6 @@ public class IshgardSolver
                 numCrafts += entry.getValue();
             }
             return numCrafts;
-        }
-
-        public void mult(int multiplier)
-        {
-            for(Map.Entry<Crafter,Integer> craft : crafts.entrySet())
-            {
-                crafts.put(craft.getKey(), craft.getValue() == null? 0 : craft.getValue() * multiplier);
-            }
-
-            for(Map.Entry<Material,Integer> mat : matsUsed.entrySet())
-            {
-                matsUsed.put(mat.getKey(), mat.getValue() == null? 0 : mat.getValue() * multiplier);
-            }
-        }
-
-        public void add(Solution other)
-        {
-            if(other == null)
-                return;
-
-            for(Map.Entry<Crafter, Integer> craft : other.getCrafts().entrySet())
-            {
-                addCraft(craft.getKey(), craft.getValue());
-            }
-        }
-
-        public Solution cloneMinusCraft(Crafter craft)
-        {
-            Solution clone = new Solution(this);
-            if(clone.crafts.containsKey(craft) && clone.crafts.get(craft) > 0)
-            {
-                clone.crafts.put(craft, clone.crafts.get(craft) - 1);
-                for(Material mat : RECIPES.get(craft).mats)
-                {
-                    clone.matsUsed.put(mat, clone.matsUsed.get(mat) - 1);
-                }
-
-                return clone;
-            }
-            else
-            {
-                return null;
-            }
         }
 
         public int hashCode()

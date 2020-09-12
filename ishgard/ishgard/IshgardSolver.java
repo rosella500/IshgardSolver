@@ -5,7 +5,7 @@ import static ishgard.Material.*;
 
 import java.util.Map;
 import java.util.Scanner;
-import java.util.HashMap;
+import java.util.EnumMap;
 
 import java.util.Set; 
 import java.util.HashSet; 
@@ -14,13 +14,13 @@ import java.util.HashSet;
 public class IshgardSolver
 {
     
-    public static final int MAT_MULTIPLIER = 10;
+    protected static final int MAT_MULTIPLIER = 10;
 
-    public static final int WASTED_MAT_WEIGHT = 20;
-    public static final int GEM_WEIGHT = 1;
-    public static final int SUBDIVISION = 300 / MAT_MULTIPLIER;
+    private static final int WASTED_MAT_WEIGHT = 20;
+    private static final int GEM_WEIGHT = 1;
+    private static final int SUBDIVISION = 200 / MAT_MULTIPLIER;
 
-    public static Map<Crafter, Recipe> RECIPES = new HashMap<>();
+    protected static final Map<Crafter, Recipe> RECIPES = new EnumMap<>(Crafter.class);
 
     public static void main(String[] args)
     {
@@ -33,7 +33,7 @@ public class IshgardSolver
         RECIPES.put(ALC, new Recipe(Adder, Salt, Water, 4));
         RECIPES.put(CUL, new Recipe(Wheat, Water, Salt, 4));
 
-        Map<Material, Integer> totalMats = new HashMap<>();
+        Map<Material, Integer> totalMats = new EnumMap<>(Material.class);
         Scanner sc = new Scanner(System.in);
         for(Material m : Material.values())
         {
@@ -58,7 +58,7 @@ public class IshgardSolver
             mult = 1;
         }
 
-        Map<Material, Integer> workingMatMap = new HashMap<>();
+        Map<Material, Integer> workingMatMap = new EnumMap<>(Material.class);
 
         for(Map.Entry<Material,Integer> entry : totalMats.entrySet())
         {
@@ -145,7 +145,7 @@ public class IshgardSolver
     public static int getGemsFromSolution(Solution s)
     {
         int gems = 0;
-        for(Map.Entry<Crafter,Integer> entry : s.getSolution().entrySet())
+        for(Map.Entry<Crafter,Integer> entry : s.getCrafts().entrySet())
         {
             gems += RECIPES.get(entry.getKey()).numGems * (entry.getValue() == null ? 0 : entry.getValue());
         }
@@ -180,7 +180,6 @@ public class IshgardSolver
             int currentWastedMats = getWastedMatsFromSolution(solution, mats);
 
             int weightedValue = currentGems * GEM_WEIGHT / 4 + currentWastedMats * WASTED_MAT_WEIGHT;
-            //System.out.println("solution has "+currentWastedMats+" wasted mats and "+currentGems+" gems. This gives it a weighted badness value of "+weightedValue);
 
             if(bestSolution == null || weightedValue < bestWeightedValue)
             {
@@ -206,18 +205,18 @@ public class IshgardSolver
 
     private static class Solution 
     {
-        Map<Crafter,Integer> solution;
+        Map<Crafter,Integer> crafts;
         Map<Material,Integer> matsUsed;
 
         public Solution(Solution toClone)
         {
-            solution = new HashMap<>(toClone.getSolution());
-            matsUsed = new HashMap<>(toClone.getMats());
+            crafts = new EnumMap<>(toClone.getCrafts());
+            matsUsed = new EnumMap<>(toClone.getMats());
         }
         public Solution()
         {
-            solution = new HashMap<>();
-            matsUsed = new HashMap<>();
+            crafts = new EnumMap<>(Crafter.class);
+            matsUsed = new EnumMap<>(Material.class);
         }
 
         public boolean canFitCrafter(Crafter craft, Map<Material, Integer> mats)
@@ -235,16 +234,21 @@ public class IshgardSolver
 
         public void addCraft(Crafter craft)
         {
-            addValueToMap(solution, craft, 1);
+            addCraft(craft, 1);
+        }
+
+        private void addCraft(Crafter craft, int amount)
+        {
+            addValueToMap(crafts, craft, amount);
             for(Material m : RECIPES.get(craft).mats)
             {
-                addValueToMap(matsUsed, m, 1);
+                addValueToMap(matsUsed, m, amount);
             }
         }
 
-        public Map<Crafter,Integer> getSolution()
+        public Map<Crafter,Integer> getCrafts()
         {
-            return solution;
+            return crafts;
         }
 
         public Map<Material,Integer> getMats()
@@ -254,10 +258,10 @@ public class IshgardSolver
 
         public Map<Material, Integer> getLeftoverMats(Map<Material, Integer> mats)
         {
-            Map<Material, Integer> leftoverMats = new HashMap<>();
-            for(Material mat : mats.keySet())
+            Map<Material, Integer> leftoverMats = new EnumMap<>(Material.class);
+            for(Map.Entry<Material,Integer> mat : mats.entrySet())
             {
-                leftoverMats.put(mat, (mats.get(mat) == null? 0 : mats.get(mat)) - (matsUsed.get(mat) == null? 0 : matsUsed.get(mat)));
+                leftoverMats.put(mat.getKey(), (mat.getValue() == null? 0 : mat.getValue()) - (matsUsed.get(mat.getKey()) == null? 0 : matsUsed.get(mat.getKey())));
             }
 
             return leftoverMats;
@@ -266,7 +270,7 @@ public class IshgardSolver
         public int calcTotalCrafts()
         {
             int numCrafts = 0;
-            for(Map.Entry<Crafter,Integer> entry : solution.entrySet())
+            for(Map.Entry<Crafter,Integer> entry : crafts.entrySet())
             {
                 numCrafts += entry.getValue();
             }
@@ -275,14 +279,14 @@ public class IshgardSolver
 
         public void mult(int multiplier)
         {
-            for(Crafter craft : solution.keySet())
+            for(Map.Entry<Crafter,Integer> craft : crafts.entrySet())
             {
-                solution.put(craft, solution.get(craft) == null? 0 : solution.get(craft) * multiplier);
+                crafts.put(craft.getKey(), craft.getValue() == null? 0 : craft.getValue() * multiplier);
             }
 
-            for(Material mat : matsUsed.keySet())
+            for(Map.Entry<Material,Integer> mat : matsUsed.entrySet())
             {
-                matsUsed.put(mat, matsUsed.get(mat) == null? 0 : matsUsed.get(mat) * multiplier);
+                matsUsed.put(mat.getKey(), mat.getValue() == null? 0 : mat.getValue() * multiplier);
             }
         }
 
@@ -291,32 +295,26 @@ public class IshgardSolver
             if(other == null)
                 return;
 
-            for(Crafter craft : solution.keySet())
+            for(Map.Entry<Crafter, Integer> craft : other.getCrafts().entrySet())
             {
-                solution.put(craft, (solution.get(craft) == null? 0 : solution.get(craft)) + (other.getSolution().get(craft) == null? 0 : other.getSolution().get(craft)));
-            }
-
-            for(Material mat : matsUsed.keySet())
-            {
-                matsUsed.put(mat, (matsUsed.get(mat) == null? 0 : matsUsed.get(mat)) + (other.getMats().get(mat) == null? 0 : other.getMats().get(mat)));
+                addCraft(craft.getKey(), craft.getValue());
             }
         }
 
         public String getSummary(Map<Material, Integer> totalMats)
         {
             StringBuilder toStr = new StringBuilder();
-            for(Map.Entry<Crafter,Integer> entry : solution.entrySet())
+            for(Map.Entry<Crafter,Integer> entry : crafts.entrySet())
             {
                 toStr.append(entry.getKey()).append("\t");
                 toStr.append(entry.getValue()).append("\t");
                 toStr.append(entry.getKey().getCraftName()).append("\n");
             }
 
-            toStr.append("\nTotal turn-ins: ").append(calcTotalCrafts()).append(" Wasted mats: ").append(getWastedMatsFromSolution(this, totalMats) * MAT_MULTIPLIER)
+            toStr.append("\nTotal turn-ins: ").append(calcTotalCrafts()).append(" Unused mats: ").append(getWastedMatsFromSolution(this, totalMats) * MAT_MULTIPLIER)
             .append(" Gems needed: ").append(getGemsFromSolution(this));
 
             return toStr.toString();
-        }
-        
+        } 
     }
 }

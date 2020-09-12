@@ -45,8 +45,6 @@ public class IshgardSolver
         Solution bestSolution = getBestBruteForce(totalMats);
 
         System.out.println(bestSolution.getSummary(totalMats));
-        Map<Material,Integer> leftoverMats = bestSolution.getLeftoverMats(totalMats);
-        System.out.println("Leftover mats: "+leftoverMats);
 
         System.out.println("Press enter to exit...");
 

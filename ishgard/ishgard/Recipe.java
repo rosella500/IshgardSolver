@@ -3,10 +3,10 @@ package ishgard;
 import java.util.List;
 import java.util.ArrayList;
 
-public class Recipe implements Comparable<Recipe>
+public class Recipe
 {
-    public List<Material> mats;
-    public int numGems;
+    public final List<Material> mats;
+    public final int numGems;
 
     public Recipe(Material one, Material two, Material three, int gems)
     {
@@ -20,11 +20,5 @@ public class Recipe implements Comparable<Recipe>
     public boolean usesMat(Material mat)
     {
         return mats.contains(mat);
-    }
-
-    @Override
-    public int compareTo(Recipe o)
-    {
-        return numGems - o.numGems;
     }
 }

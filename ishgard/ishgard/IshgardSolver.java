@@ -44,7 +44,15 @@ public class IshgardSolver
 
         Solution bestSolution = getBestBruteForce(totalMats);
 
-        System.out.println(bestSolution.getSummary(totalMats));
+        if(bestSolution == null)
+        {
+            System.out.println("No crafts can be made with those materials. :(");
+        }
+        else
+        {
+            System.out.println(bestSolution.getSummary(totalMats));
+        }
+        
 
         System.out.println("Press enter to exit...");
 
@@ -229,17 +237,6 @@ public class IshgardSolver
             return matsUsed;
         }
 
-        public Map<Material, Integer> getLeftoverMats(Map<Material, Integer> mats)
-        {
-            Map<Material, Integer> leftoverMats = new EnumMap<>(Material.class);
-            for(Map.Entry<Material,Integer> mat : mats.entrySet())
-            {
-                leftoverMats.put(mat.getKey(), (mat.getValue() == null? 0 : mat.getValue()) - (matsUsed.get(mat.getKey()) == null? 0 : matsUsed.get(mat.getKey())));
-            }
-
-            return leftoverMats;
-        }
-
         public int calcTotalCrafts()
         {
             int numCrafts = 0;
@@ -260,7 +257,7 @@ public class IshgardSolver
             if(!(o instanceof Solution))
                 return false;
 
-            return ((Solution)o).hashCode() == hashCode();
+            return ((Solution)o).crafts.equals(crafts);
         }
 
         public String getSummary(Map<Material, Integer> totalMats)

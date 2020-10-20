@@ -46,6 +46,7 @@ public class IshgardSolver
         
         Solution bestSolution = getBestGreedy(totalMats);
 
+        System.out.println();
         if(bestSolution == null)
         {
             System.out.println("No crafts can be made with those materials. :(");
@@ -53,8 +54,8 @@ public class IshgardSolver
         else
         {
             System.out.println(bestSolution.getSummary(totalMats));
-            Map<Material,Integer> leftoverMats = bestSolution.getLeftoverMats(totalMats);
-            System.out.println("Leftover mats: "+leftoverMats);
+            //Map<Material,Integer> leftoverMats = bestSolution.getLeftoverMats(totalMats);
+            //System.out.println("Leftover mats: "+leftoverMats);
         }
 
         System.out.println("Press enter to exit...");
@@ -103,7 +104,11 @@ public class IshgardSolver
                     greedySolution.addCraft(craft);
                 }
             }
-            allSolutions.add(greedySolution);
+            if(greedySolution.getCrafts().size() > 0)
+            {
+                allSolutions.add(greedySolution);
+            }
+            
         }
 
         return getBestSolution(totalMats, allSolutions.toArray(new Solution[0]));

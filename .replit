@@ -1,0 +1,2 @@
+language = "java10"
+run = "javac ishgard/ishgard/*.java -d classes && java -cp classes ishgard.IshgardSolver"

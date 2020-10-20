@@ -1,14 +1,15 @@
 package ishgard;
 public enum Material
 {
-    Log,
+    
     Wheat,
-    Adder,
-    Resin,
-    Cotton, 
-    Salt,
-    Water,
+    Ore,
     Dust,
     Mudstone,
-    Ore
+    Log,
+    Cotton, 
+    Resin,
+    Adder,
+    Salt,
+    Water
 }

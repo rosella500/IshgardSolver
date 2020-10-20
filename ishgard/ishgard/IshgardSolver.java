@@ -44,7 +44,7 @@ public class IshgardSolver
         }
         sc.nextLine();
         
-        Solution bestSolution = getBestGreedyWithOptimizations(totalMats, 6);
+        Solution bestSolution = getBestGreedy(totalMats);
 
         if(bestSolution == null)
         {
